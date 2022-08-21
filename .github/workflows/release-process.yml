@@ -43,6 +43,13 @@ jobs:
           cat ../tmp/checksums.txt | tee -a ../tmp/checksums-formatted.txt
           echo '```' | tee -a ../tmp/checksums-formatted.txt
 
+      - name: Run Package build
+        run: |
+          constraintVersion="${{ github.ref_name }}"
+          ./cli/kctrl-linux-arm64 pkg release -y -v ${constraintVersion:1} --debug
+          shasum -a 256 carvel-artifacts/packages/kapp-controller.carvel.dev/package.yml | tee -a ../tmp/checksums.txt
+          shasum -a 256 carvel-artifacts/packages/kapp-controller.carvel.dev/metadata.yml | tee -a ../tmp/checksums.txt
+      
       - name: Create release draft and upload release yaml
         uses: softprops/action-gh-release@17cd0d34deddf848fc0e7d9be5202c148c270a0a
         with:
@@ -53,6 +60,8 @@ jobs:
             ./cli/kctrl-*
             ./tmp/release.yml
             ./tmp/checksums.txt
+            carvel-artifacts/packages/kapp-controller.carvel.dev/package.yml
+            carvel-artifacts/packages/kapp-controller.carvel.dev/metadata.yml
           draft: true
           prerelease: true
 
@@ -99,6 +108,8 @@ jobs:
             }
             console.log(checksums)
             return `${checksums['release.yml']}  ./tmp/release.yml
+            ${checksums['package.yml']}  carvel-artifacts/packages/kapp-controller.carvel.dev/package.yml
+            ${checksums['metadata.yml']}  carvel-artifacts/packages/kapp-controller.carvel.dev/metadata.yml
             ${checksums['kctrl-darwin-amd64']}  ./kctrl-darwin-amd64
             ${checksums['kctrl-darwin-arm64']}  ./kctrl-darwin-arm64
             ${checksums['kctrl-linux-amd64']}  ./kctrl-linux-amd64
