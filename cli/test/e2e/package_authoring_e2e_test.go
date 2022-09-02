@@ -88,9 +88,9 @@ func TestE2EInitAndReleaseCases(t *testing.T) {
 
 	env := BuildEnv(t)
 	logger := Logger{}
-	//kappCli := Kapp{t, env.Namespace, env.KappBinaryPath, logger}
+	kappCli := Kapp{t, env.Namespace, env.KappBinaryPath, logger}
 	kappCtrl := Kctrl{t, env.Namespace, env.KctrlBinaryPath, logger}
-	//kubectl := Kubectl{t, env.Namespace, logger}
+	kubectl := Kubectl{t, env.Namespace, logger}
 
 	expectedOutputs := ExpectedOutputYaml{
 		PackageBuild: []string{
@@ -441,33 +441,33 @@ spec:
 			require.Equal(t, expectedPackage, out, "Expected Package to match")
 		})
 
-		//logger.Section(fmt.Sprintf("%s: Testing and installing created Package",testcase.Name), func() {
-		//
-		//	switch testcase.Name {
-		//	case "Github Release Flow":
-		//		kubectl.Run([]string{"create", "ns", "dynatrace"})
-		//	}
-		//	kappCli.RunWithOpts([]string{"deploy", "-a", "test-package", "-f", fmt.Sprintf("%s/carvel-artifacts/packages/testpackage.corp.dev", workingDir)},
-		//		RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
-		//
-		//	kappCtrl.RunWithOpts([]string{"pkg", "available", "list"},
-		//		RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
-		//
-		//	kappCtrl.RunWithOpts([]string{"pkg", "install", "-p", "testpackage.corp.dev", "-i", "test", "--version", "1.0.0"},
-		//		RunOpts{ StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
-		//
-		//	kappCtrl.RunWithOpts([]string{"pkg", "installed", "delete",  "-i", "test"},
-		//		RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
-		//
-		//	kappCli.RunWithOpts([]string{"delete", "-a", "test-package"},
-		//		RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
-		//
-		//	// clean
-		//	switch testcase.Name {
-		//	case "Github Release Flow":
-		//		kubectl.Run([]string{"delete", "ns", "dynatrace"})
-		//	}
-		//})
+		logger.Section(fmt.Sprintf("%s: Testing and installing created Package", testcase.Name), func() {
+
+			switch testcase.Name {
+			case "Github Release Flow":
+				kubectl.Run([]string{"create", "ns", "dynatrace"})
+			}
+			kappCli.RunWithOpts([]string{"deploy", "-a", "test-package", "-f", fmt.Sprintf("%s/carvel-artifacts/packages/testpackage.corp.dev", workingDir)},
+				RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
+
+			kappCtrl.RunWithOpts([]string{"pkg", "available", "list"},
+				RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
+
+			kappCtrl.RunWithOpts([]string{"pkg", "install", "-p", "testpackage.corp.dev", "-i", "test", "--version", "1.0.0"},
+				RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
+
+			kappCtrl.RunWithOpts([]string{"pkg", "installed", "delete", "-i", "test"},
+				RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
+
+			kappCli.RunWithOpts([]string{"delete", "-a", "test-package"},
+				RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
+
+			// clean
+			switch testcase.Name {
+			case "Github Release Flow":
+				kubectl.Run([]string{"delete", "ns", "dynatrace"})
+			}
+		})
 		cleanUp()
 	}
 }
