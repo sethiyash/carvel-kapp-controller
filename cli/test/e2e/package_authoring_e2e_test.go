@@ -445,7 +445,7 @@ spec:
 
 			switch testcase.Name {
 			case "Github Release Flow":
-				kubectl.Run([]string{"create", "ns", "dynatrace"})
+				kubectl.RunWithOpts([]string{"create", "ns", "dynatrace"}, RunOpts{NoNamespace: true})
 			}
 			kappCli.RunWithOpts([]string{"deploy", "-a", "test-package", "-f", fmt.Sprintf("%s/carvel-artifacts/packages/testpackage.corp.dev", workingDir)},
 				RunOpts{StdinReader: promptOutput.StringReader(), StdoutWriter: promptOutput.BufferedOutputWriter()})
@@ -465,7 +465,7 @@ spec:
 			// clean
 			switch testcase.Name {
 			case "Github Release Flow":
-				kubectl.Run([]string{"delete", "ns", "dynatrace"})
+				kubectl.RunWithOpts([]string{"delete", "ns", "dynatrace"}, RunOpts{NoNamespace: true})
 			}
 		})
 		cleanUp()
