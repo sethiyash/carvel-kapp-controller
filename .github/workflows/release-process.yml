@@ -98,12 +98,8 @@ jobs:
             checksums = {}
             for (const r of releases["data"]) {
               if (r.draft && `refs/tags/${r.tag_name}` == "${{ github.ref }}") {
-                console.log(r.assets)
                 for (const asset of r.assets) {
-                  console.log("yash")
-                  console.log(asset)
                   var release_asset = await github.rest.repos.getReleaseAsset({ headers: {accept: `application/octet-stream`}, accept: `application/octet-stream`, owner: owner, repo: repo, asset_id: asset.id });
-                  console.log(release_asset)
                   const hash = crypto.createHash('sha256');
                   let http_promise = new Promise((resolve, reject) => {
                     https.get(release_asset.url, (stream) => {
@@ -120,7 +116,6 @@ jobs:
                 }
               }
             }
-            console.log(checksums)
             return `${checksums['release.yml']}  ./tmp/release.yml
             ${checksums['package.yml']}  carvel-artifacts/packages/kapp-controller.carvel.dev/package.yml
             ${checksums['metadata.yml']}  carvel-artifacts/packages/kapp-controller.carvel.dev/metadata.yml
