@@ -122,9 +122,7 @@ jobs:
             ${checksums['kctrl-darwin-arm64']}  ./kctrl-darwin-arm64
             ${checksums['kctrl-linux-amd64']}  ./kctrl-linux-amd64
             ${checksums['kctrl-linux-arm64']}  ./kctrl-linux-arm64
-            ${checksums['kctrl-windows-amd64.exe']}  ./kctrl-windows-amd64.exe
-            ${checksums['package.yml']}  carvel-artifacts/packages/kapp-controller.carvel.dev/package.yml
-            ${checksums['metadata.yml']}  carvel-artifacts/packages/kapp-controller.carvel.dev/metadata.yml`
+            ${checksums['kctrl-windows-amd64.exe']}  ./kctrl-windows-amd64.exe`
 
       - name: Verify uploaded artifacts
         if: startsWith(github.ref, 'refs/tags/')
