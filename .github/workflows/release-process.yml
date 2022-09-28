@@ -51,9 +51,9 @@ jobs:
         run: |
           constraintVersion="${{ github.ref_name }}"
           ./cli/kctrl-linux-amd64 pkg release -y -v ${constraintVersion:1} --debug
+          shasum -a 256 carvel-artifacts/packages/kapp-controller.carvel.dev/package.yml | tee -a tmp/checksums.txt
+          shasum -a 256 carvel-artifacts/packages/kapp-controller.carvel.dev/metadata.yml | tee -a tmp/checksums.txt
           cd cli
-          shasum -a 256 ../carvel-artifacts/packages/kapp-controller.carvel.dev/package.yml | tee -a ../tmp/checksums.txt
-          shasum -a 256 ../carvel-artifacts/packages/kapp-controller.carvel.dev/metadata.yml | tee -a ../tmp/checksums.txt
           shasum -a 256 ./kctrl-* | tee -a ../tmp/checksums.txt
           echo "# :open_file_folder: Files Checksum" | tee ../tmp/checksums-formatted.txt
           echo '```' | tee -a ../tmp/checksums-formatted.txt
