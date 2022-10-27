@@ -2,5 +2,5 @@
 ---
 push_images: true
 image_cache: false
-image_repo: docker.io/ysethiya/sgctest
+image_repo: docker.io/ysethiya/kctrltest
 platform: "linux/amd64,linux/arm64"
