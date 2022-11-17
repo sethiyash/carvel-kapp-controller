@@ -144,6 +144,6 @@ jobs:
       - name: Testing with kctrl dev deploy 
         run: |
           kubectl create ns kctrl-pkg-test
-          kapp deploy -a kc-rbac -f kc-rbac.yml
+          kapp deploy -a kc-rbac -f kc-rbac.yml -y
           ./cli/kctrl-linux-amd64 dev -f package-resources.yml --local -n kctrl-pkg-test
-          
+
