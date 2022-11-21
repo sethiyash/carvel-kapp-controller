@@ -140,10 +140,4 @@ jobs:
           ${{steps.get-checksums-from-draft-release.outputs.result}}
           EOF
           )
-      
-      - name: Testing with kctrl dev deploy 
-        run: |
-          kubectl create ns kctrl-pkg-test
-          kapp deploy -a kc-rbac -f kc-rbac.yml -y
-          ./cli/kctrl-linux-amd64 dev -f package-resources.yml --local -n kctrl-pkg-test
 
