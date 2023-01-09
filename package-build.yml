@@ -23,8 +23,12 @@ spec:
               - .imgpkg/images.yml
       export:
       - imgpkgBundle:
+<<<<<<< HEAD
+          image: ysethiya/testkcontrol
+=======
           image: ghcr.io/vmware-tanzu/carvel-kapp-controller-package-bundle
           useKbldImagesLock: false
+>>>>>>> ad24bdc3e41219b176f88280a469e9fd21979339
         includePaths:
         - config
         - config-release
