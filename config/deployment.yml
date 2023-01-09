@@ -58,7 +58,9 @@ spec:
           runAsNonRoot: true
           capabilities:
             drop:
-            - all
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
       - name: kapp-controller-sidecarexec
         image: kapp-controller
         args: ["--sidecarexec"]
@@ -69,6 +71,8 @@ spec:
         env:
         - name: KAPPCTRL_SIDECAREXEC_SOCK
           value: /etc/kappctrl-mem-tmp/sidecarexec.sock
+        - name: IMGPKG_ACTIVE_KEYCHAINS
+          value: gke,aks,ecr
         volumeMounts:
         - name: template-fs
           mountPath: /etc/kappctrl-mem-tmp
@@ -83,7 +87,9 @@ spec:
           runAsNonRoot: true
           capabilities:
             drop:
-            - all
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
       volumes:
       - name: template-fs
         emptyDir:

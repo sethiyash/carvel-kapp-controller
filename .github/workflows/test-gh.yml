@@ -6,11 +6,17 @@ name: test-gh
     paths-ignore:
     - 'docs/**'
     - '*.md'
+    - 'cli/**'
   pull_request:
     types: [opened, reopened, synchronize]
     paths-ignore:
     - 'docs/**'
     - '*.md'
+    - 'cli/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-all:
@@ -20,9 +26,9 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v3
       with:
-        go-version: "1.19"
+        go-version: "1.19.3"
     - name: Check out code
-      uses: actions/checkout@v3.1.0
+      uses: actions/checkout@v3.2.0
       with:
           fetch-depth: 0
     - name: Install Carvel Tools
