@@ -6,8 +6,6 @@ metadata:
 spec:
   refName: kapp-controller.carvel.dev
   releasedAt: null
-  licenses:
-  - Apache 2.0
   template:
     spec:
       deploy:
@@ -18,7 +16,6 @@ spec:
       - ytt:
           paths:
           - config
-          - config-release
       - kbld: {}
   valuesSchema:
     openAPIv3: null
@@ -32,13 +29,8 @@ metadata:
   name: kapp-controller.carvel.dev
 spec:
   displayName: kapp-controller
-  longDescription: "Provide CRDs to declaratively install, manage, and upgrade applications on a Kubernetes cluster"
-  shortDescription: "install, manage, and upgrade applications"
-  providerName: carvel.dev
-  maintainers:
-    - name: Carvel team (see www.carvel.dev for team members)
-  categories:
-    - "package management"
+  longDescription: kapp-controller.carvel.dev
+  shortDescription: kapp-controller.carvel.dev
 
 ---
 apiVersion: packaging.carvel.dev/v1alpha1
