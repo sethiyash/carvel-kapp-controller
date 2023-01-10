@@ -1,8 +1,11 @@
-#@data/values
+#@data/values-schema
 ---
+#@schema/desc "The namespace in which to deploy kapp-controller"
 namespace: kapp-controller
-packaging_global_namespace: kapp-controller-packaging-global
+#@schema/desc "Whether to create namespace specified for kapp-controller"
 create_namespace: true
+
+packaging_global_namespace: kapp-controller-packaging-global
 create_packaging_namespace: true
 #! clusters version 1.19 and below should disable APIPriorityAndFairness by setting the below to false
 enable_api_priority_and_fairness: true
@@ -12,10 +15,5 @@ dangerous_enable_pprof: false
 #! comma separated list of cipher suites - empty for language defaults
 tls_cipher_suites: ""
 
-push_images: false
-image_cache: true
-image_repo: docker.io/k14stest/kapp-controller-test
-platform: ""
-
 api_port: 10350
-kapp_controller_version: "develop"
+
