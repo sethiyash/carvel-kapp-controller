@@ -5,7 +5,7 @@
 #@schema/desc "Configuration explicitly for developing kapp-controller"
 dev:
   #@schema/desc "Location of kapp-controller image"
-  image_repo: "docker.io/k14stest/kapp-controller-test"
+  image_repo: "docker.io/ysethiya/kapp-controller-test"
   #@schema/desc "Development version"
   kapp_controller_version: develop
   #@schema/desc "Comma separated list of supported architectures"
