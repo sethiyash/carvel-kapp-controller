@@ -24,6 +24,8 @@ metadata:
     kapp-controller.carvel.dev/version: #@ data.values.version
 EOF
 
+cat ./tmp/release.yml
+
 ytt -f ./tmp/release.yml -f overlay.yml -v version="$(get_kappctrl_ver)" > ./tmp/release.yml
 
 shasum -a 256 ./tmp/release.yml
