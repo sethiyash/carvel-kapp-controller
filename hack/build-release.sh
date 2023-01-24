@@ -10,13 +10,19 @@ source $(dirname "$0")/version-util.sh
 
 export version="$(get_kappctrl_ver)"
 
-ytt -f config/ -f config-release -v dev.kapp_controller_version="$(get_kappctrl_ver)" --data-values-env=KCTRL | kbld --imgpkg-lock-output .imgpkg/images.yml -f- > ./tmp/release.yml
+ytt -f config/ -f config-release -v dev.kapp_controller_version="$(get_kappctrl_ver)" --data-values-env=KCTRL | kbld --imgpkg-lock-output .imgpkg/images.yml -f- > ./tmp/release-old.yml
 
 cat <<EOF >overlay.yml
 #@ load("@ytt:overlay", "overlay")
 #@ load("@ytt:data", "data")
 
-#@overlay/match by=overlay.subset({"kind":"Deployment"})
+#@ def resource(kind, name):
+kind: #@ kind
+metadata:
+  name: #@ name
+#@ end
+
+#@overlay/match by=overlay.subset(resource("Deployment", "kapp-controller"))
 ---
 metadata:
   annotations:
@@ -24,7 +30,11 @@ metadata:
     kapp-controller.carvel.dev/version: #@ data.values.version
 EOF
 
-ytt -f ./tmp/release.yml -f overlay.yml -v version="$(get_kappctrl_ver)" > ./tmp/release.yml
+cat ./tmp/release-old.yml
+
+echo "Printed release-old"
+
+ytt -f ./tmp/release-old.yml -f overlay.yml -v version="$(get_kappctrl_ver)" > ./tmp/release.yml
 
 shasum -a 256 ./tmp/release.yml
 
