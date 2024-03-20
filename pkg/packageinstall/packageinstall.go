@@ -6,7 +6,10 @@ package packageinstall
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"carvel.dev/vendir/pkg/vendir/versions"
+	verv1alpha1 "carvel.dev/vendir/pkg/vendir/versions/v1alpha1"
 	"github.com/go-logr/logr"
 	semver "github.com/k14s/semver/v4"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis/kappctrl/v1alpha1"
@@ -16,9 +19,8 @@ import (
 	pkgclient "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apiserver/client/clientset/versioned"
 	kcclient "github.com/vmware-tanzu/carvel-kapp-controller/pkg/client/clientset/versioned"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/client/clientset/versioned/scheme"
+	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/metrics"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/reconciler"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
-	verv1alpha1 "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -52,13 +54,27 @@ type PackageInstallCR struct {
 	pkgclient  pkgclient.Interface
 	coreClient kubernetes.Interface
 	compInfo   ComponentInfo
+	opts       Opts
+
+	pkgMetrics *metrics.Metrics
+}
+
+// Kind return kind of pkg install
+func (pi *PackageInstallCR) Kind() string {
+	return "PackageInstall"
+}
+
+// nolint: revive
+type Opts struct {
+	DefaultSyncPeriod time.Duration
 }
 
 func NewPackageInstallCR(model *pkgingv1alpha1.PackageInstall, log logr.Logger,
-	kcclient kcclient.Interface, pkgclient pkgclient.Interface, coreClient kubernetes.Interface, compInfo ComponentInfo) *PackageInstallCR {
+	kcclient kcclient.Interface, pkgclient pkgclient.Interface, coreClient kubernetes.Interface,
+	compInfo ComponentInfo, opts Opts, pkgMetrics *metrics.Metrics) *PackageInstallCR {
 
 	return &PackageInstallCR{model: model, unmodifiedModel: model.DeepCopy(), log: log,
-		kcclient: kcclient, pkgclient: pkgclient, coreClient: coreClient, compInfo: compInfo}
+		kcclient: kcclient, pkgclient: pkgclient, coreClient: coreClient, compInfo: compInfo, opts: opts, pkgMetrics: pkgMetrics}
 }
 
 func (pi *PackageInstallCR) Reconcile() (reconcile.Result, error) {
@@ -66,6 +82,8 @@ func (pi *PackageInstallCR) Reconcile() (reconcile.Result, error) {
 		pi.model.Status.GenericStatus,
 		func(st kcv1alpha1.GenericStatus) { pi.model.Status.GenericStatus = st },
 	}
+
+	pi.pkgMetrics.ReconcileCountMetrics.InitMetrics(pi.Kind(), pi.model.Name, pi.model.Namespace)
 
 	var result reconcile.Result
 	var err error
@@ -93,6 +111,14 @@ func (pi *PackageInstallCR) Reconcile() (reconcile.Result, error) {
 
 func (pi *PackageInstallCR) reconcile(modelStatus *reconciler.Status) (reconcile.Result, error) {
 	pi.log.Info("Reconciling")
+	pi.pkgMetrics.ReconcileCountMetrics.RegisterReconcileAttempt(pi.Kind(), pi.model.Name, pi.model.Namespace)
+
+	reconcileStartTime := time.Now()
+	pi.pkgMetrics.IsFirstReconcile = pi.pkgMetrics.ReconcileCountMetrics.GetReconcileAttemptCounterValue(pi.Kind(), pi.model.Name, pi.model.Namespace) == 1
+	defer func() {
+		pi.pkgMetrics.ReconcileTimeMetrics.RegisterOverallTime(pi.Kind(), pi.model.Name, pi.model.Namespace,
+			pi.pkgMetrics.IsFirstReconcile, time.Since(reconcileStartTime))
+	}()
 
 	err := pi.blockDeletion()
 	if err != nil {
@@ -174,7 +200,7 @@ func (pi *PackageInstallCR) reconcile(modelStatus *reconciler.Status) (reconcile
 }
 
 func (pi *PackageInstallCR) createAppFromPackage(pkg datapkgingv1alpha1.Package) (reconcile.Result, error) {
-	desiredApp, err := NewApp(&v1alpha1.App{}, pi.model, pkg)
+	desiredApp, err := NewApp(&v1alpha1.App{}, pi.model, pkg, pi.opts)
 	if err != nil {
 		return reconcile.Result{Requeue: true}, err
 	}
@@ -193,7 +219,7 @@ func (pi *PackageInstallCR) reconcileAppWithPackage(existingApp *kcv1alpha1.App,
 		return reconcile.Result{}, err
 	}
 
-	desiredApp, err := NewApp(existingApp, pi.model, pkgWithPlaceholderSecrets)
+	desiredApp, err := NewApp(existingApp, pi.model, pkgWithPlaceholderSecrets, pi.opts)
 	if err != nil {
 		return reconcile.Result{Requeue: true}, err
 	}
@@ -366,6 +392,7 @@ func (pi *PackageInstallCR) reconcileDelete(modelStatus *reconciler.Status) (rec
 	if existingApp.Spec.Canceled != pi.model.Spec.Canceled {
 		existingApp.Spec.Canceled = pi.model.Spec.Canceled
 	}
+	existingApp.Spec.DefaultNamespace = pi.model.Spec.DefaultNamespace
 
 	if !equality.Semantic.DeepEqual(existingApp, unchangeExistingApp) {
 		existingApp, err = pi.kcclient.KappctrlV1alpha1().Apps(existingApp.Namespace).Update(

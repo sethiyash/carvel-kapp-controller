@@ -72,7 +72,7 @@ func NewDeleteCmd(o *DeleteOptions, flagsFactory cmdcore.FlagsFactory) *cobra.Co
 	}
 
 	o.WaitFlags.Set(cmd, flagsFactory, &cmdcore.WaitFlagsOpts{
-		AllowDisableWait: false,
+		AllowDisableWait: false || o.pkgCmdTreeOpts.AlwaysAllowTogglingWait,
 		DefaultInterval:  1 * time.Second,
 		DefaultTimeout:   5 * time.Minute,
 	})
@@ -136,11 +136,12 @@ func (o *DeleteOptions) Run(args []string) error {
 		return err
 	}
 
-	o.statusUI.PrintMessagef("Waiting for deletion of package install '%s' from namespace '%s'", o.Name, o.NamespaceFlags.Name)
-
-	err = o.waitForResourceDelete(kcClient)
-	if err != nil {
-		return err
+	if o.WaitFlags.Enabled {
+		o.statusUI.PrintMessagef("Waiting for deletion of package install '%s' from namespace '%s'", o.Name, o.NamespaceFlags.Name)
+		err = o.waitForResourceDelete(kcClient)
+		if err != nil {
+			return err
+		}
 	}
 
 	return o.deleteInstallCreatedResources(pkgi, dynamicClient)
@@ -335,7 +336,7 @@ func (o *DeleteOptions) waitForResourceDelete(kcClient kcclient.Interface) error
 	tailAppStatusOutput := func(tailErrored *bool) {
 		appWatcher := cmdapp.NewAppTailer(o.NamespaceFlags.Name, o.Name, o.ui, kcClient, cmdapp.AppTailerOpts{
 			IgnoreNotExists: true,
-		})
+		}, nil)
 
 		err := appWatcher.TailAppStatus()
 		if err != nil {

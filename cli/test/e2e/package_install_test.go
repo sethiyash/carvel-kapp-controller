@@ -138,6 +138,22 @@ key2: value2
 		require.Exactly(t, expectedOutputRows, output.Tables[0].Rows)
 	})
 
+	logger.Section("package installed list with one package installed with wide option", func() {
+		out, err := kappCtrl.RunWithOpts([]string{"package", "installed", "list", "--wide", "--json"}, RunOpts{})
+		require.NoError(t, err)
+
+		output := uitest.JSONUIFromBytes(t, []byte(out))
+
+		expectedOutputRows := []map[string]string{{
+			"message":         "",
+			"name":            "testpkgi",
+			"package_name":    "test-pkg.carvel.dev",
+			"package_version": "1.0.0",
+			"status":          "Reconcile succeeded",
+		}}
+		require.Exactly(t, expectedOutputRows, output.Tables[0].Rows)
+	})
+
 	logger.Section("package installed get", func() {
 
 		out, err := kappCtrl.RunWithOpts([]string{"package", "installed", "get", "--package-install", pkgiName, "--json"}, RunOpts{})
@@ -165,6 +181,14 @@ key2: value2
 		// Checks that AppStatusDiff works
 		require.Equal(t, 1, strings.Count(out, "Deploying"))
 		require.Contains(t, out, "Deploy succeeded")
+	})
+
+	logger.Section("listing packages with non existing column names", func() {
+		_, err := kappCtrl.RunWithOpts([]string{"package", "installed", "status", "-i", pkgiName, "--column=name,invalid,namespace,ns"}, RunOpts{
+			AllowError: true,
+		})
+		expectedError := "kctrl: Error: invalid column names: invalid,ns"
+		require.ErrorContains(t, err, expectedError)
 	})
 
 	logger.Section("package installed update", func() {
@@ -258,6 +282,36 @@ key2: value2
 			AllowError: true,
 		})
 		require.Contains(t, err.Error(), "not found")
+	})
+
+	logger.Section("Listing with error in package install", func() {
+		incorrectValuesFile := `
+key1: value1:
+`
+		_, err := kappCtrl.RunWithOpts([]string{"package", "installed", "create", "--package-install", pkgiName,
+			"-p", packageMetadataName, "--version", packageVersion1,
+			"--values-file", "-"}, RunOpts{
+			StdinReader: strings.NewReader(incorrectValuesFile),
+			AllowError:  true,
+		})
+		require.Error(t, err)
+
+		out, err := kappCtrl.RunWithOpts([]string{"package", "installed", "list", "--wide", "--json"}, RunOpts{})
+		require.NoError(t, err)
+
+		output := uitest.JSONUIFromBytes(t, []byte(out))
+
+		expectedOutputRows := []map[string]string{{
+			"message":         "Error (see .status.usefulErrorMessage for details)",
+			"name":            "testpkgi",
+			"package_name":    "test-pkg.carvel.dev",
+			"package_version": "1.0.0",
+			"status":          "Reconcile failed",
+		}}
+		require.Exactly(t, expectedOutputRows, output.Tables[0].Rows)
+
+		_, err = kappCtrl.RunWithOpts([]string{"package", "installed", "delete", "--package-install", pkgiName}, RunOpts{})
+		require.NoError(t, err)
 	})
 
 	logger.Section("package installed update with missing old version", func() {

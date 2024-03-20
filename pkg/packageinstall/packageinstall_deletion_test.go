@@ -6,13 +6,14 @@ package packageinstall
 import (
 	"testing"
 
+	versions "carvel.dev/vendir/pkg/vendir/versions/v1alpha1"
 	"github.com/k14s/semver/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis/kappctrl/v1alpha1"
 	pkgingv1alpha1 "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis/packaging/v1alpha1"
 	fakeapiserver "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apiserver/client/clientset/versioned/fake"
 	fakekappctrl "github.com/vmware-tanzu/carvel-kapp-controller/pkg/client/clientset/versioned/fake"
-	versions "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
+	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/metrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -65,7 +66,9 @@ func Test_PackageInstallDeletion(t *testing.T) {
 		appClient := fakekappctrl.NewSimpleClientset(pkgInstall, existingApp)
 		coreClient := fake.NewSimpleClientset()
 
-		ip := NewPackageInstallCR(pkgInstall, log, appClient, pkgClient, coreClient, FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")})
+		ip := NewPackageInstallCR(pkgInstall, log, appClient, pkgClient, coreClient,
+			FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")}, Opts{},
+			metrics.NewMetrics())
 		_, err := ip.Reconcile()
 		assert.Nil(t, err)
 
@@ -87,6 +90,6 @@ func (f FakeComponentInfo) KappControllerVersion() (semver.Version, error) {
 	return f.KCVersion, nil
 }
 
-func (f FakeComponentInfo) KubernetesVersion(serviceAccountName string, specCluster *v1alpha1.AppCluster, objMeta *metav1.ObjectMeta) (semver.Version, error) {
+func (f FakeComponentInfo) KubernetesVersion(_ string, _ *v1alpha1.AppCluster, _ *metav1.ObjectMeta) (semver.Version, error) {
 	return f.K8sVersion, nil
 }

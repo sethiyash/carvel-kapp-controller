@@ -52,6 +52,9 @@ spec:
         - containerPort: #@ data.values.apiPort
           name: api
           protocol: TCP
+        - containerPort: #@ data.values.metricsPort
+          name: metrics
+          protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -59,6 +62,8 @@ spec:
           capabilities:
             drop:
             - ALL
+          seccompProfile:
+            type: RuntimeDefault
       - name: kapp-controller-sidecarexec
         image: kapp-controller
         args: ["--sidecarexec"]
@@ -86,6 +91,8 @@ spec:
           capabilities:
             drop:
             - ALL
+          seccompProfile:
+            type: RuntimeDefault
       volumes:
       - name: template-fs
         emptyDir:

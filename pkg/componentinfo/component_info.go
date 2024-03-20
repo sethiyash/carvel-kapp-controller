@@ -5,11 +5,13 @@
 package componentinfo
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/k14s/semver/v4"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis/kappctrl/v1alpha1"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/kubeconfig"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -48,7 +50,7 @@ func (ci *ComponentInfo) KubernetesVersion(serviceAccountName string, specCluste
 		return ci.parseAndScrubVersion(v.String())
 
 	case specCluster != nil:
-		accessInfo, err := ci.clusterAccess.ClusterAccess(serviceAccountName, specCluster, kubeconfig.AccessLocation{Name: objMeta.Name, Namespace: objMeta.Namespace})
+		accessInfo, err := ci.clusterAccess.ClusterAccess(serviceAccountName, specCluster, kubeconfig.AccessLocation{Name: objMeta.Name, Namespace: objMeta.Namespace}, "")
 		if err != nil {
 			return semver.Version{}, err
 		}
@@ -81,6 +83,15 @@ func (ci *ComponentInfo) KubernetesAPIs() ([]string, error) {
 	}
 
 	return metav1.ExtractGroupVersions(groups), nil
+}
+
+// NamespaceStatus returns the status of the App namespace
+func (ci *ComponentInfo) NamespaceStatus(name string) (v1.NamespaceStatus, error) {
+	namespace, err := ci.coreClient.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return v1.NamespaceStatus{}, err
+	}
+	return namespace.Status, nil
 }
 
 // parseAndScrubVersion parses version string and removes Pre and Build from the version

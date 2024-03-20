@@ -15,8 +15,10 @@ import (
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/exec"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/fetch"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/kubeconfig"
+	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/metrics"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/reftracker"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/template"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -63,7 +65,7 @@ func Test_SecretRefs_RetrievesAllSecretRefs(t *testing.T) {
 	tmpFac := template.NewFactory(k8scs, fetchFac, false, exec.NewPlainCmdRunner())
 	deployFac := deploy.NewFactory(k8scs, kubeconfig.NewKubeconfig(k8scs, log), nil, exec.NewPlainCmdRunner(), log)
 
-	app := apppkg.NewApp(appWithRefs, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, nil, FakeComponentInfo{})
+	app := apppkg.NewApp(appWithRefs, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, metrics.NewMetrics(), FakeComponentInfo{})
 
 	out := app.SecretRefs()
 	assert.Truef(t, reflect.DeepEqual(out, expected), "Expected: %s\nGot: %s\n", expected, out)
@@ -87,7 +89,7 @@ func Test_SecretRefs_RetrievesNoSecretRefs_WhenNonePresent(t *testing.T) {
 	tmpFac := template.NewFactory(k8scs, fetchFac, false, exec.NewPlainCmdRunner())
 	deployFac := deploy.NewFactory(k8scs, kubeconfig.NewKubeconfig(k8scs, log), nil, exec.NewPlainCmdRunner(), log)
 
-	app := apppkg.NewApp(appEmpty, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, nil, FakeComponentInfo{})
+	app := apppkg.NewApp(appEmpty, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, metrics.NewMetrics(), FakeComponentInfo{})
 
 	out := app.SecretRefs()
 	assert.Equal(t, 0, len(out), "No SecretRefs to be returned")
@@ -125,7 +127,7 @@ func Test_ConfigMapRefs_RetrievesAllConfigMapRefs(t *testing.T) {
 	tmpFac := template.NewFactory(k8scs, fetchFac, false, exec.NewPlainCmdRunner())
 	deployFac := deploy.NewFactory(k8scs, kubeconfig.NewKubeconfig(k8scs, log), nil, exec.NewPlainCmdRunner(), log)
 
-	app := apppkg.NewApp(appWithRefs, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, nil, FakeComponentInfo{})
+	app := apppkg.NewApp(appWithRefs, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, metrics.NewMetrics(), FakeComponentInfo{})
 
 	out := app.ConfigMapRefs()
 	assert.Truef(t, reflect.DeepEqual(out, expected), "Expected: %s\nGot: %s\n", expected, out)
@@ -149,16 +151,17 @@ func Test_ConfigMapRefs_RetrievesNoConfigMapRefs_WhenNonePresent(t *testing.T) {
 	tmpFac := template.NewFactory(k8scs, fetchFac, false, exec.NewPlainCmdRunner())
 	deployFac := deploy.NewFactory(k8scs, kubeconfig.NewKubeconfig(k8scs, log), nil, exec.NewPlainCmdRunner(), log)
 
-	app := apppkg.NewApp(appEmpty, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, nil, FakeComponentInfo{})
+	app := apppkg.NewApp(appEmpty, apppkg.Hooks{}, fetchFac, tmpFac, deployFac, log, apppkg.Opts{}, metrics.NewMetrics(), FakeComponentInfo{})
 
 	out := app.ConfigMapRefs()
 	assert.Lenf(t, out, 0, "Expected: %s\nGot: %s\n", "No ConfigMapRefs to be returned", out)
 }
 
 type FakeComponentInfo struct {
-	KCVersion  semver.Version
-	K8sVersion semver.Version
-	K8sAPIs    []string
+	KCVersion          semver.Version
+	K8sVersion         semver.Version
+	K8sAPIs            []string
+	AppNamespaceStatus v1.NamespaceStatus
 }
 
 func (f FakeComponentInfo) KubernetesAPIs() ([]string, error) {
@@ -169,6 +172,10 @@ func (f FakeComponentInfo) KappControllerVersion() (semver.Version, error) {
 	return f.KCVersion, nil
 }
 
-func (f FakeComponentInfo) KubernetesVersion(serviceAccountName string, specCluster *v1alpha1.AppCluster, objMeta *metav1.ObjectMeta) (semver.Version, error) {
+func (f FakeComponentInfo) KubernetesVersion(_ string, _ *v1alpha1.AppCluster, _ *metav1.ObjectMeta) (semver.Version, error) {
 	return f.K8sVersion, nil
+}
+
+func (f FakeComponentInfo) NamespaceStatus(_ string) (v1.NamespaceStatus, error) {
+	return f.AppNamespaceStatus, nil
 }

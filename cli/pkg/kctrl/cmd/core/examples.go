@@ -14,6 +14,8 @@ type PackageCommandTreeOpts struct {
 
 	Color bool
 	JSON  bool
+
+	AlwaysAllowTogglingWait bool
 }
 
 type Example struct {

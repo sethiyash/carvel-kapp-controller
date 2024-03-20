@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	versions "carvel.dev/vendir/pkg/vendir/versions/v1alpha1"
 	"github.com/k14s/semver/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,7 @@ import (
 	datapkgingv1alpha1 "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apiserver/apis/datapackaging/v1alpha1"
 	fakeapiserver "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apiserver/client/clientset/versioned/fake"
 	fakekappctrl "github.com/vmware-tanzu/carvel-kapp-controller/pkg/client/clientset/versioned/fake"
-	versions "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
+	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -402,7 +403,9 @@ func Test_PlaceHolderSecretCreated_WhenPackageHasNoSecretRef(t *testing.T) {
 		GitVersion: "v0.20.0",
 	}
 
-	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s, FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")})
+	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s,
+		FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")}, Opts{},
+		metrics.NewMetrics())
 
 	_, err := ip.Reconcile()
 	assert.Nil(t, err)
@@ -481,7 +484,9 @@ func Test_PlaceHolderSecretsCreated_WhenPackageHasMultipleFetchStages(t *testing
 		GitVersion: "v0.20.0",
 	}
 
-	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s, FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")})
+	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s,
+		FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")}, Opts{},
+		metrics.NewMetrics())
 
 	_, err := ip.Reconcile()
 	assert.Nil(t, err)
@@ -571,7 +576,9 @@ func Test_PlaceHolderSecretsNotCreated_WhenFetchStagesHaveSecrets(t *testing.T) 
 		GitVersion: "v0.20.0",
 	}
 
-	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s, FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")})
+	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s,
+		FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")}, Opts{},
+		metrics.NewMetrics())
 
 	_, err := ip.Reconcile()
 	assert.Nil(t, err)
@@ -648,7 +655,9 @@ func Test_PlaceHolderSecretCreated_WhenPackageInstallUpdated(t *testing.T) {
 
 	fakekctrl := fakekappctrl.NewSimpleClientset(model, existingApp)
 	fakek8s := fake.NewSimpleClientset()
-	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s, FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")})
+	ip := NewPackageInstallCR(model, log, fakekctrl, fakePkgClient, fakek8s,
+		FakeComponentInfo{KCVersion: semver.MustParse("0.42.31337")}, Opts{},
+		metrics.NewMetrics())
 
 	// mock the kubernetes server version
 	fakeDiscovery, _ := fakek8s.Discovery().(*fakediscovery.FakeDiscovery)

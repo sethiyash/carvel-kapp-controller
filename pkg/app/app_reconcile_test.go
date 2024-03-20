@@ -20,6 +20,7 @@ import (
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/metrics"
 	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/template"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
@@ -28,7 +29,6 @@ import (
 
 func Test_NoInspectReconcile_IfNoDeployAttempted(t *testing.T) {
 	log := logf.Log.WithName("kc")
-	var appMetrics = metrics.NewAppMetrics()
 
 	// The url under fetch is invalid, which will cause this
 	// app to fail before deploy.
@@ -51,7 +51,7 @@ func Test_NoInspectReconcile_IfNoDeployAttempted(t *testing.T) {
 	tmpFac := template.NewFactory(k8scs, fetchFac, false, exec.NewPlainCmdRunner())
 	deployFac := deploy.NewFactory(k8scs, kubeconfig.NewKubeconfig(k8scs, log), nil, exec.NewPlainCmdRunner(), log)
 
-	crdApp := NewCRDApp(&app, log, appMetrics, kappcs, fetchFac, tmpFac, deployFac, FakeComponentInfo{}, Opts{MinimumSyncPeriod: 30 * time.Second})
+	crdApp := NewCRDApp(&app, log, metrics.NewMetrics(), kappcs, fetchFac, tmpFac, deployFac, FakeComponentInfo{}, Opts{MinimumSyncPeriod: 30 * time.Second})
 	_, err := crdApp.Reconcile(false)
 	assert.Nil(t, err, "unexpected error with reconciling", err)
 
@@ -85,7 +85,6 @@ func Test_NoInspectReconcile_IfNoDeployAttempted(t *testing.T) {
 
 func Test_NoInspectReconcile_IfInspectNotEnabled(t *testing.T) {
 	log := logf.Log.WithName("kc")
-	var appMetrics = metrics.NewAppMetrics()
 
 	app := v1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
@@ -118,7 +117,7 @@ func Test_NoInspectReconcile_IfInspectNotEnabled(t *testing.T) {
 	tmpFac := template.NewFactory(k8scs, fetchFac, false, exec.NewPlainCmdRunner())
 	deployFac := deploy.NewFactory(k8scs, kubeconfig.NewKubeconfig(k8scs, log), nil, exec.NewPlainCmdRunner(), log)
 
-	crdApp := NewCRDApp(&app, log, appMetrics, kappcs, fetchFac, tmpFac, deployFac, FakeComponentInfo{}, Opts{MinimumSyncPeriod: 30 * time.Second})
+	crdApp := NewCRDApp(&app, log, metrics.NewMetrics(), kappcs, fetchFac, tmpFac, deployFac, FakeComponentInfo{}, Opts{MinimumSyncPeriod: 30 * time.Second})
 	_, err := crdApp.Reconcile(false)
 	assert.Nil(t, err, "unexpected error with reconciling", err)
 
@@ -163,7 +162,6 @@ func Test_NoInspectReconcile_IfInspectNotEnabled(t *testing.T) {
 
 func Test_TemplateError_DisplayedInStatus_UsefulErrorMessageProperty(t *testing.T) {
 	log := logf.Log.WithName("kc")
-	var appMetrics = metrics.NewAppMetrics()
 
 	fetchInline := map[string]string{
 		"file.yml": `foo: #@ data.values.nothere`,
@@ -190,7 +188,7 @@ func Test_TemplateError_DisplayedInStatus_UsefulErrorMessageProperty(t *testing.
 	tmpFac := template.NewFactory(k8scs, fetchFac, false, exec.NewPlainCmdRunner())
 	deployFac := deploy.NewFactory(k8scs, kubeconfig.NewKubeconfig(k8scs, log), nil, exec.NewPlainCmdRunner(), log)
 
-	crdApp := NewCRDApp(&app, log, appMetrics, kappcs, fetchFac, tmpFac, deployFac, FakeComponentInfo{}, Opts{MinimumSyncPeriod: 30 * time.Second})
+	crdApp := NewCRDApp(&app, log, metrics.NewMetrics(), kappcs, fetchFac, tmpFac, deployFac, FakeComponentInfo{}, Opts{MinimumSyncPeriod: 30 * time.Second})
 	_, err := crdApp.Reconcile(false)
 	assert.Nil(t, err, "Unexpected error with reconciling", err)
 
@@ -232,12 +230,13 @@ func Test_TemplateError_DisplayedInStatus_UsefulErrorMessageProperty(t *testing.
 }
 
 type FakeComponentInfo struct {
-	KCVersion       semver.Version
-	KCVersionCount  *int
-	K8sVersion      semver.Version
-	K8sVersionCount *int
-	K8sAPIs         []string
-	K8sAPIsCount    *int
+	KCVersion          semver.Version
+	KCVersionCount     *int
+	K8sVersion         semver.Version
+	K8sVersionCount    *int
+	K8sAPIs            []string
+	K8sAPIsCount       *int
+	AppNamespaceStatus v1.NamespaceStatus
 }
 
 func (f FakeComponentInfo) KubernetesAPIs() ([]string, error) {
@@ -250,7 +249,11 @@ func (f FakeComponentInfo) KappControllerVersion() (semver.Version, error) {
 	return f.KCVersion, nil
 }
 
-func (f FakeComponentInfo) KubernetesVersion(serviceAccountName string, specCluster *v1alpha1.AppCluster, objMeta *metav1.ObjectMeta) (semver.Version, error) {
+func (f FakeComponentInfo) KubernetesVersion(_ string, _ *v1alpha1.AppCluster, _ *metav1.ObjectMeta) (semver.Version, error) {
 	*f.K8sVersionCount++
 	return f.K8sVersion, nil
+}
+
+func (f FakeComponentInfo) NamespaceStatus(_ string) (v1.NamespaceStatus, error) {
+	return f.AppNamespaceStatus, nil
 }

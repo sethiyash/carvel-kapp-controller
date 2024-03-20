@@ -1,66 +1,70 @@
 - checksums:
     darwin:
-      amd64: c2781a30caf7f573dece6ec186ac0e97470d0de2eccf9fcf63f267c35495ac30
+      amd64: 700dbb362a73950d779cf298ba191de2a35394fa68bf19e74add5e7384b2875a
+      arm64: aec0bf2b5ca7dc98dd04444135738d0a1add18fcc1294c258eb8f1061b3eb9ec
     linux:
-      amd64: d05f430ac18b3791d831f4cfd78371a7549f225dfaeb6fef2e5bfcd293d6c382
-      arm64: 54e228823e851320b848d854218004299d2ff362e0fe9e287d5a52df502baaaf
+      amd64: de2dd0a659fd12b2d80e00fa2a4a9316db67e0372e79c3bf48586ea53201180e
+      arm64: f12dc884af6be46a56c4233cbe456e90d8082d4699c0412d4adfaaae68712f4d
   dev: true
   name: ytt
   repo: vmware-tanzu/carvel-ytt
   urlTemplate: https://github.com/vmware-tanzu/carvel-{{.Name}}/releases/download/{{.Version}}/{{.Name}}-{{.OS}}-{{.Arch}}
-  version: v0.45.0
+  version: v0.47.0
 - checksums:
     darwin:
-      amd64: 721085d7b50323dddd92f79ea4cebbadc3d5318add886e5e02f77d8e13df6786
+      amd64: 9f4b12722c79a1bc748ea882e47ff939272a45c477fed8ac7e206001aca0bfb1
+      arm64: 5088c312db268540dcb312b8530c53758e683a01f1bb3600365085ddc41a9710
     linux:
-      amd64: 9f387e18043c95c922efbf879fc1d4d616b20c1c47aeae4f834c6f0069906735
-      arm64: 0ffa023c69355ca43ae131be065963e30d576963a066e903c7691fb54a79d08c
+      amd64: cdbfdfc1e5da490eb59705bfbc30b3fd05c0485474aff15bec52352af46d5880
+      arm64: 9da907c879102d7dc4205e073d6d32abf4ef1c719851e96498aae42ed691c342
   dev: true
   name: kbld
   repo: vmware-tanzu/carvel-kbld
   urlTemplate: https://github.com/vmware-tanzu/carvel-{{.Name}}/releases/download/{{.Version}}/{{.Name}}-{{.OS}}-{{.Arch}}
-  version: v0.37.0
+  version: v0.39.0
 - checksums:
     darwin:
-      amd64: dcbf6dd9b4cecfc6316391029a6e9a5f3863e6a1f7848eb5fb78bfdbdc06faf8
+      amd64: 8746b9b49c47f27b9b08f425f247a3ea0b847f5cb9a1b88e4cff6c036112c7d7
+      arm64: 7fa5e9e9aff5c29eb170252ba56b598038e7e141c5c7afa60e81b872e96c8729
     linux:
-      amd64: 9aaa735985efbe240af0ca1d80adf3b43be6cf4ec6620a053082e31bea25dae7
-      arm64: 944fdfebfdf1026d318609cc706bad454196f0b1d76e557b56c829b0e6165a9f
+      amd64: 7cc17971634da69c80d7159199c2c514c38b479d28987e055ce2c173bfbd9306
+      arm64: 9847fa6f7122451e14833d9aaa376692dfc9fe2895ceb3a7159616a8041b68f5
   dev: true
   name: kapp
   repo: vmware-tanzu/carvel-kapp
   urlTemplate: https://github.com/vmware-tanzu/carvel-{{.Name}}/releases/download/{{.Version}}/{{.Name}}-{{.OS}}-{{.Arch}}
-  version: v0.55.0
+  version: v0.60.0
 - checksums:
     darwin:
-      amd64: 155b6ff8c251b53dfd7e9554ff657b5bf626659dc288012a124a8bdb9186851e
+      amd64: 0bf3840619436908b11fce2c7015d928450b41a3b9ef19fecc6223ff2ed084a4
+      arm64: b6defba97d36e26e02df8b263de17061bbbc432365c9d26070eb7a837d7e33fc
     linux:
-      amd64: 6c9ed811fe9983e03424f2ecfc00a4aaeb19646ef27c42eb2a6c643ea07bd32b
-      arm64: 79e026faaa1ac75c36414a97ee7e58b4bf9c148b1ce34aee795c667b71745519
+      amd64: 3e076a452d88d6e3bc190d527f4d7c949ab6eccae19bf5d3cbb910d53724f2b9
+      arm64: c43469a085dd0f6cebdab97a7747710f9dafa4886dd5e0ae7c1d3f975a12756e
   dev: true
   name: vendir
-  repo: vmware-tanzu/carvel-vendir
-  urlTemplate: https://github.com/vmware-tanzu/carvel-{{.Name}}/releases/download/{{.Version}}/{{.Name}}-{{.OS}}-{{.Arch}}
-  version: v0.33.1
+  repo: carvel-dev/vendir
+  urlTemplate: https://github.com/carvel-dev/{{.Name}}/releases/download/{{.Version}}/{{.Name}}-{{.OS}}-{{.Arch}}
+  version: v0.40.0
 - checksums:
     linux:
-      amd64: 781d826daec584f9d50a01f0f7dadfd25a3312217a14aa2fbb85107b014ac8ca
-      arm64: 0a60baac83c3106017666864e664f52a4e16fbd578ac009f9a85456a9241c5db
+      amd64: 3c90f24e180f8c207b8a18e5ec82cb0fa49858a7a0a86e4ed52a98398681e00b
+      arm64: 85e1573e76fa60af14ba7e9ec75db2129b6884203be866893fa0b3f7e41ccd5e
   dev: false
   name: helm
   repo: helm/helm
   tarballSubpath: '{{.OS}}-{{.Arch}}/helm'
   urlTemplate: https://get.helm.sh/helm-{{.Version}}-{{.OS}}-{{.Arch}}.tar.gz
-  version: v3.11.2
+  version: v3.14.3
 - checksums:
     linux:
-      amd64: 53aec65e45f62a769ff24b7e5384f0c82d62668dd96ed56685f649da114b4dbb
-      arm64: 4945313ed0dfddba52a12ab460d750c91ead725d734039493da0285ad6c5f032
+      amd64: d6bf07fb61972127c9e0d622523124c2d81caf9f7971fb123228961021811697
+      arm64: 15b8e90ca80dc23125cd2925731035fdef20c749ba259df477d1dd103a06d621
   dev: false
   name: sops
   repo: mozilla/sops
   urlTemplate: https://github.com/mozilla/sops/releases/download/{{.Version}}/sops-{{.Version}}.{{.OS}}.{{.Arch}}
-  version: v3.7.3
+  version: v3.8.1
 - checksums:
     linux:
       amd64: cf16cbb108fc56e2064b00ba2b65d9fb1b8d7002ca5e38260ee1cc34f6aaa8f9
@@ -73,11 +77,11 @@
   version: v1.1.1
 - checksums:
     linux:
-      amd64: 5e7ecb614b5926acfc36eb1258800391ab7c6e6e026fa7cacbfe92006bac895c
-      arm64: a8c3f4140d18c324cc69f5de4df0566e529e1636cff340095a42475799bf3fed
+      amd64: 6a4306155cbf3f6d89740464dc0921bbaac74b27236a05a92e30cbb5f248d33b
+      arm64: 8cf589790f806f7a077197d462e71040c8417d1814a1f469e473c468121e823a
   dev: false
   name: cue
   repo: cue-lang/cue
   tarballSubpath: cue
   urlTemplate: https://github.com/cue-lang/cue/releases/download/{{.Version}}/cue_{{.Version}}_{{.OS}}_{{.Arch}}.tar.gz
-  version: v0.4.3
+  version: v0.7.0

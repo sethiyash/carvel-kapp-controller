@@ -36,6 +36,7 @@ type AppSpecBuilderOpts struct {
 	BundleTag     string
 
 	BuildYttValidations bool
+	BuildValues         string
 }
 
 func NewAppSpecBuilder(depsFactory cmdcore.DepsFactory, logger logger.Logger, ui cmdcore.AuthoringUI, opts AppSpecBuilderOpts) *AppSpecBuilder {
@@ -64,12 +65,22 @@ func (b *AppSpecBuilder) Build() (kcv1alpha1.AppSpec, error) {
 					Git: &kcv1alpha1.AppFetchGit{},
 				},
 			},
-			Template: b.opts.BuildTemplate,
+			Template: b.deepCopyAppTemplateList(b.opts.BuildTemplate),
 			Deploy:   b.opts.BuildDeploy,
 		},
 	}
 	buildConfigs := cmdlocal.Configs{
 		Apps: []kcv1alpha1.App{builderApp},
+	}
+
+	if b.opts.BuildValues != "" && len(builderApp.Spec.Template) > 0 {
+		if builderApp.Spec.Template[0].Ytt != nil {
+			builderApp.Spec.Template[0].Ytt.ValuesFrom = append(builderApp.Spec.Template[0].Ytt.ValuesFrom,
+				kcv1alpha1.AppTemplateValuesSource{Path: b.opts.BuildValues})
+		} else if builderApp.Spec.Template[0].HelmTemplate != nil {
+			builderApp.Spec.Template[0].HelmTemplate.ValuesFrom = append(builderApp.Spec.Template[0].HelmTemplate.ValuesFrom,
+				kcv1alpha1.AppTemplateValuesSource{Path: b.opts.BuildValues})
+		}
 	}
 
 	// Make lock output directory if it does not exist
@@ -157,4 +168,13 @@ func (b *AppSpecBuilder) checkForErrorsAfterReconciliation(app kcv1alpha1.App, f
 		return fmt.Errorf("Reconciling: %s", existingApp.Status.UsefulErrorMessage)
 	}
 	return nil
+}
+
+func (b *AppSpecBuilder) deepCopyAppTemplateList(src []kcv1alpha1.AppTemplate) []kcv1alpha1.AppTemplate {
+	copy := []kcv1alpha1.AppTemplate{}
+	for _, templateStep := range src {
+		templateStepCopy := templateStep.DeepCopy()
+		copy = append(copy, *templateStepCopy)
+	}
+	return copy
 }

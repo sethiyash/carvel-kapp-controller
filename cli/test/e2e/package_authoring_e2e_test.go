@@ -252,6 +252,7 @@ spec:
           properties:
             clusters:
               default: []
+              items: {}
               type: array
             kubeConfigSecretName:
               default: mongodb-enterprise-operator-multi-cluster-kubeconfig
@@ -260,7 +261,7 @@ spec:
         operator:
           properties:
             affinity:
-              default: '{}'
+              default: {}
               type: object
             createOperatorServiceAccount:
               default: true
@@ -281,7 +282,7 @@ spec:
                 objects like Deployment, ServiceAccount, Role etc.
               type: string
             nodeSelector:
-              default: '{}'
+              default: {}
               type: object
             operator_image_name:
               default: mongodb-enterprise-operator
@@ -289,6 +290,7 @@ spec:
               type: string
             tolerations:
               default: []
+              items: {}
               type: array
             vaultSecretBackend:
               properties:
@@ -812,12 +814,13 @@ spec:
           type: object
         imagePullSecrets:
           default: []
+          items: {}
           type: array
         nameOverride:
           default: ""
           type: string
         podAnnotations:
-          default: '{}'
+          default: {}
           type: object
         replicaCount:
           default: 1
@@ -834,7 +837,7 @@ spec:
         serviceAccount:
           properties:
             annotations:
-              default: '{}'
+              default: {}
               description: Annotations to add to the service account
               type: object
             create:

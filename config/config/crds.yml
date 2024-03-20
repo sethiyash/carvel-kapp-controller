@@ -160,6 +160,9 @@ spec:
                             description: Specifies namespace in destination cluster (optional)
                             type: string
                         type: object
+                      defaultNamespace:
+                        description: Specifies the default namespace to install the App resources, by default this is same as the App's namespace (optional; v0.48.0+)
+                        type: string
                       deploy:
                         items:
                           properties:
@@ -206,6 +209,9 @@ spec:
                             git:
                               description: Uses git to clone repository
                               properties:
+                                forceHTTPBasicAuth:
+                                  description: Force the usage of HTTP Basic Auth when Basic Auth is provided (optional)
+                                  type: boolean
                                 lfsSkipSmudge:
                                   description: Skip lfs download (optional)
                                   type: boolean
@@ -773,6 +779,9 @@ spec:
                     description: Specifies namespace in destination cluster (optional)
                     type: string
                 type: object
+              defaultNamespace:
+                description: Specifies the default namespace to install the App resources, by default this is same as the App's namespace (optional; v0.48.0+)
+                type: string
               deploy:
                 items:
                   properties:
@@ -819,6 +828,9 @@ spec:
                     git:
                       description: Uses git to clone repository
                       properties:
+                        forceHTTPBasicAuth:
+                          description: Force the usage of HTTP Basic Auth when Basic Auth is provided (optional)
+                          type: boolean
                         lfsSkipSmudge:
                           description: Skip lfs download (optional)
                           type: boolean
@@ -1502,6 +1514,9 @@ spec:
                     description: Specifies namespace in destination cluster (optional)
                     type: string
                 type: object
+              defaultNamespace:
+                description: Specifies the default namespace to install the Package resources, by default this is same as the PackageInstall namespace (optional; v0.48.0+)
+                type: string
               noopDelete:
                 description: When NoopDelete set to true, PackageInstall deletion should delete PackageInstall/App CR but preserve App's associated resources.
                 type: boolean
@@ -1638,6 +1653,9 @@ spec:
                   git:
                     description: Uses git to clone repository containing package list
                     properties:
+                      forceHTTPBasicAuth:
+                        description: Force the usage of HTTP Basic Auth when Basic Auth is provided (optional)
+                        type: boolean
                       lfsSkipSmudge:
                         description: Skip lfs download (optional)
                         type: boolean

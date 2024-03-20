@@ -34,10 +34,12 @@ type GetOptions struct {
 	DefaultValuesFile string
 
 	pkgCmdTreeOpts cmdcore.PackageCommandTreeOpts
+
+	columns *[]string
 }
 
-func NewGetOptions(ui ui.UI, depsFactory cmdcore.DepsFactory, logger logger.Logger, pkgCmdTreeOpts cmdcore.PackageCommandTreeOpts) *GetOptions {
-	return &GetOptions{ui: ui, depsFactory: depsFactory, logger: logger, pkgCmdTreeOpts: pkgCmdTreeOpts}
+func NewGetOptions(ui ui.UI, depsFactory cmdcore.DepsFactory, logger logger.Logger, pkgCmdTreeOpts cmdcore.PackageCommandTreeOpts, columns *[]string) *GetOptions {
+	return &GetOptions{ui: ui, depsFactory: depsFactory, logger: logger, pkgCmdTreeOpts: pkgCmdTreeOpts, columns: columns}
 }
 
 func NewGetCmd(o *GetOptions, flagsFactory cmdcore.FlagsFactory) *cobra.Command {
@@ -210,7 +212,10 @@ func (o *GetOptions) show(client pkgclient.Interface, pkgName, pkgVersion string
 		Rows:      [][]uitable.Value{row},
 	}
 
-	o.ui.PrintTable(table)
+	err = cmdcore.PrintTable(o.ui, table, o.columns)
+	if err != nil {
+		return err
+	}
 
 	if pkgVersion == "" {
 		return o.showVersions(pkgList)
@@ -238,9 +243,7 @@ func (o *GetOptions) showVersions(pkgList *v1alpha1.PackageList) error {
 		})
 	}
 
-	o.ui.PrintTable(table)
-
-	return nil
+	return cmdcore.PrintTable(o.ui, table, o.columns)
 }
 
 func (o *GetOptions) showValuesSchema(client pkgclient.Interface, pkgName, pkgVersion string) error {
@@ -289,20 +292,18 @@ func (o *GetOptions) showValuesSchema(client pkgclient.Interface, pkgName, pkgVe
 		})
 	}
 
-	o.ui.PrintTable(table)
-
-	return err
+	return cmdcore.PrintTable(o.ui, table, o.columns)
 }
 
 func (o *GetOptions) saveDefaultValuesFileOutput(pkg *v1alpha1.Package) error {
-	if len(pkg.Spec.ValuesSchema.OpenAPIv3.Raw) == 0 {
-		return fmt.Errorf("Package '%s/%s' does not have any user configurable values in the '%s' namespace", pkg.Spec.RefName, pkg.Spec.Version, o.NamespaceFlags.Name)
-	}
-
 	s := PackageSchema{pkg.Spec.ValuesSchema.OpenAPIv3.Raw}
 	defaultValues, err := s.DefaultValues()
 	if err != nil {
 		return err
+	}
+
+	if len(defaultValues) == 0 {
+		return fmt.Errorf("Package '%s/%s' does not have any user configurable values in the '%s' namespace", pkg.Spec.RefName, pkg.Spec.Version, o.NamespaceFlags.Name)
 	}
 
 	err = os.WriteFile(o.DefaultValuesFile, defaultValues, 0600)

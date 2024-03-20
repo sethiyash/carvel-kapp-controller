@@ -337,3 +337,173 @@ stringData:
 		assert.Contains(t, cr.Status.Fetch.Stderr, "MANIFEST_UNKNOWN: manifest unknown;")
 	})
 }
+
+func TestConfig_PackageInstallDefaultSyncPeriod(t *testing.T) {
+	env := e2e.BuildEnv(t)
+	logger := e2e.Logger{}
+	kapp := e2e.Kapp{T: t, Namespace: env.Namespace, L: logger}
+	sas := e2e.ServiceAccounts{Namespace: env.Namespace}
+	kubectl := e2e.Kubectl{T: t, Namespace: env.Namespace, L: logger}
+
+	configName := "test-config-package-install-default-sync-period-config"
+	name := "install-pkg-test"
+
+	packageInstallYaml := fmt.Sprintf(`
+---
+apiVersion: packaging.carvel.dev/v1alpha1
+kind: PackageRepository
+metadata:
+  name: basic.test.carvel.dev
+  annotations:
+    kapp.k14s.io/change-group: "packagerepo"
+spec:
+  fetch:
+    imgpkgBundle:
+      image: index.docker.io/k8slt/kc-e2e-test-repo@sha256:ddd93b67b97c1460580ca1afd04326d16900dc716c4357cade85b83deab76f1c
+---
+apiVersion: packaging.carvel.dev/v1alpha1
+kind: PackageInstall
+metadata:
+  name: %s
+  namespace: %s
+  annotations:
+    kapp.k14s.io/change-group: kappctrl-e2e.k14s.io/packageinstalls
+    kapp.k14s.io/change-rule: "upsert after upserting packagerepo"
+spec:
+  serviceAccountName: kappctrl-e2e-ns-sa
+  packageRef:
+    refName: pkg.test.carvel.dev
+    versionSelection:
+      constraints: 1.0.0`, name, env.Namespace) + sas.ForNamespaceYAML()
+
+	cleanUpApp := func() {
+		kapp.Run([]string{"delete", "-a", name})
+		kapp.Run([]string{"delete", "-a", configName})
+	}
+	cleanUpApp()
+	defer cleanUpApp()
+
+	logger.Section("deploy controller config to set global label", func() {
+		config := `
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kapp-controller-config
+  namespace: kapp-controller
+stringData:
+  packageInstallDefaultSyncPeriod: 60s
+`
+		kapp.RunWithOpts([]string{"deploy", "-f", "-", "-a", configName}, e2e.RunOpts{StdinReader: strings.NewReader(config)})
+
+		// Since config propagation is async, just wait a little bit
+		time.Sleep(2 * time.Second)
+	})
+
+	logger.Section("deploy PackageInstall and App created has global packageInstallDefaultSyncPeriod set", func() {
+
+		// Create Repo and PackageInstall from YAML
+		kapp.RunWithOpts([]string{"deploy", "-f", "-", "-a", name}, e2e.RunOpts{StdinReader: strings.NewReader(packageInstallYaml)})
+
+		// syncPeriod of the App created via PackageInstall should match to configured value on a global controller level config
+		kubectl.Run([]string{"wait", "--for=condition=ReconcileSucceeded", "pkgi/" + name, "--timeout", "1m"})
+		kubectl.Run([]string{"wait", "--for=condition=ReconcileSucceeded", "apps/" + name, "--timeout", "1m"})
+		out := kubectl.Run([]string{"get", fmt.Sprintf("apps/%s", name), "-o", "yaml"})
+
+		var cr v1alpha1.App
+		err := yaml.Unmarshal([]byte(out), &cr)
+
+		if err != nil {
+			t.Fatalf("Failed to unmarshal: %s", err)
+		}
+
+		expectedSyncPeriod := time.Duration(60) * time.Second
+		actualSyncPeriod := cr.Spec.SyncPeriod.Duration
+
+		assert.Equal(t, actualSyncPeriod, expectedSyncPeriod)
+	})
+}
+
+func TestConfig_NoCACerts(t *testing.T) {
+	env := e2e.BuildEnv(t)
+	logger := e2e.Logger{}
+	kapp := e2e.Kapp{t, env.Namespace, logger}
+	sas := e2e.ServiceAccounts{env.Namespace}
+
+	name := "test-https"
+	pkgrName := "test-https-pkgr"
+	httpsServerName := "test-https-server"
+	configName := "test-config-missing-ca-config"
+
+	yaml1 := fmt.Sprintf(`---
+apiVersion: kappctrl.k14s.io/v1alpha1
+kind: App
+metadata:
+  name: test-https
+  annotations:
+    kapp.k14s.io/change-group: kappctrl-e2e.k14s.io/apps
+spec:
+  serviceAccountName: kappctrl-e2e-ns-sa
+  fetch:
+  - http:
+      # use https to exercise CA certificate validation
+      # When updating address, certs and keys must be regenerated
+      # for server and added to e2e/assets/https-server
+      url: https://https-svc.https-server.svc.cluster.local:443/deployment.yml
+  template:
+  - ytt: {}
+  deploy:
+  - kapp:
+      inspect: {}
+      intoNs: %s
+`, env.Namespace) + sas.ForNamespaceYAML()
+
+	cleanUp := func() {
+		kapp.Run([]string{"delete", "-a", name})
+		kapp.Run([]string{"delete", "-a", pkgrName})
+		kapp.Run([]string{"delete", "-a", configName})
+		kapp.Run([]string{"delete", "-a", httpsServerName})
+	}
+	cleanUp()
+	defer cleanUp()
+
+	logger.Section("deploy controller config with no CA cert", func() {
+		config := `
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kapp-controller-config
+  namespace: kapp-controller
+stringData:
+  # CA Cert is not present
+  caCerts:
+`
+		kapp.RunWithOpts([]string{"deploy", "-f", "-", "-a", configName},
+			e2e.RunOpts{StdinReader: strings.NewReader(config)})
+
+		// Since config propagation is async, just wait a little bit
+		time.Sleep(2 * time.Second)
+	})
+
+	logger.Section("deploy https server with self signed certs", func() {
+		kapp.Run([]string{"deploy", "-f", "../assets/https-server/", "-a", httpsServerName})
+	})
+
+	logger.Section("deploy app that tries to fetch content from https server (whose certs are not uploaded to kapp-controller)", func() {
+		_, err := kapp.RunWithOpts([]string{"deploy", "-f", "-", "-a", name}, e2e.RunOpts{
+			StdinReader:  strings.NewReader(yaml1),
+			AllowError:   true,
+			OnErrKubectl: []string{"get", "app/test-https", "-oyaml"},
+		})
+		assert.Error(t, err, "Expected fetching error")
+
+		var cr v1alpha1.App
+
+		out := kapp.Run([]string{"inspect", "-a", name, "--raw", "--tty=false", "--filter-kind=App"})
+		assert.NoError(t, yaml.Unmarshal([]byte(out), &cr))
+
+		assert.NotNil(t, cr.Status.Fetch)
+		assert.Equal(t, cr.Status.Fetch.ExitCode, 1)
+		assert.Contains(t, cr.Status.Fetch.Stderr, "x509: certificate signed by unknown authority")
+		assert.Contains(t, cr.Status.Fetch.Stderr, "(hint: The CA Certificate from URL is unknown/invalid. Add valid CA certificate to the kapp-controller configuration to reconcile successfully)")
+	})
+}
