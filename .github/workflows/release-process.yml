@@ -48,7 +48,8 @@ jobs:
         run: |
           set -e -x
           minikube start --driver=docker --wait=all
-          docker buildx create minikube --use --driver=kubernetes --bootstrap
+          eval $(minikube docker-env)
+          docker buildx create --use --driver=kubernetes --bootstrap
           ./hack/build-release.sh
           # Create release folder to store all the output artifacts
           mkdir release
